@@ -25,6 +25,11 @@ PQUALIFY_CERT_INFO QUALIFY_CERT_INFO_new(PCCERT_CONTEXT pCertificate)
      if(NULL == (pCertInfo->pSubjectName = QUALIFY_CERT_NAME_new(&pCertificate->pCertInfo->Subject)))
           goto end;
 
+     if(NULL == (pCertInfo->szNotBefore = file_time_to_str(pCertificate->pCertInfo->NotBefore)))
+          goto end;
+     if(NULL == (pCertInfo->szNotAfter = file_time_to_str(pCertificate->pCertInfo->NotAfter)))
+          goto end;
+
      rv = 1;
 end:
      if(!rv)
@@ -69,6 +74,10 @@ int QUALIFY_CERT_INFO_print(PQUALIFY_CERT_INFO pCertInfo)
                     pCertInfo->pIssuerName->pAttrs[idx].szOID,
                     pCertInfo->pIssuerName->pAttrs[idx].szValue);
      }
+
+     printf("Time validity:\n");
+     printf("\tNot before: %s\n", pCertInfo->szNotBefore);
+     printf("\tNot after: %s\n", pCertInfo->szNotAfter);
 
      return 1;
 }

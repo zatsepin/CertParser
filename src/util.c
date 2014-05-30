@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "util.h"
 
 DWORD get_name_field(LPCSTR szName, LPCSTR szField, char *szOut)
@@ -147,6 +148,32 @@ LPSTR cert_name_to_str(PCERT_NAME_BLOB pName, DWORD *pdwOutSize)
           free(szOut);
           return NULL;
      }
+
+     return szOut;
+}
+
+LPSTR file_time_to_str(FILETIME ftTime)
+{
+     CHAR tmp[1024] = {'\0'};
+     LPSTR szOut = NULL;
+     SYSTEMTIME stUTC, stLocal;
+     DWORD dwRet;
+
+     FileTimeToSystemTime(&ftTime, &stUTC);
+     SystemTimeToTzSpecificLocalTime(NULL, &stUTC, &stLocal);
+
+     dwRet = sprintf_s(tmp, sizeof(tmp), "%02d.%02d.%d  %02d:%02d:%02d",
+                         stLocal.wDay, stLocal.wMonth, stLocal.wYear,
+                         stLocal.wHour, stLocal.wMinute, stLocal.wSecond);
+
+     if(dwRet <= 0)
+          return NULL;
+
+     szOut = (LPSTR)calloc(strlen(tmp) + 1, 1);
+     if(!szOut)
+          return NULL;
+
+     memcpy(szOut, tmp, strlen(tmp));
 
      return szOut;
 }
