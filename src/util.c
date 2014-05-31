@@ -1,5 +1,39 @@
 #include <stdio.h>
+#include "defs.h"
 #include "util.h"
+
+LPSTR utf8_to_cp1251(BYTE *pbData, DWORD cbData)
+{
+     LPSTR outData = NULL;
+     wchar_t *convCp_wbuf = NULL;
+     char *convCp_buf = NULL;
+     unsigned short convCp_wbuf_len, convCp_buf_len;
+     int isOk = 0;
+
+     char buffer[4096] = {'\0'};
+
+     if(!pbData || !cbData)
+          return NULL;
+
+     memcpy(buffer, pbData, cbData);
+		
+     convCp_wbuf_len = MultiByteToWideChar( CP_UTF8 , 0, buffer, -1, NULL, 0);
+     convCp_wbuf = calloc( sizeof( wchar_t ) , convCp_wbuf_len );
+
+     if( isOk = MultiByteToWideChar( CP_UTF8, 0, buffer, -1, convCp_wbuf, convCp_wbuf_len) )
+     {
+          convCp_buf_len = WideCharToMultiByte( CP_ACP , 0, convCp_wbuf, -1, NULL, 0, NULL, NULL);
+          convCp_buf = calloc( sizeof( char ) , convCp_buf_len );
+ 
+          isOk = WideCharToMultiByte( CP_ACP, 0, convCp_wbuf, convCp_wbuf_len, convCp_buf, convCp_buf_len, NULL, NULL );
+     };
+
+     outData = _strdup(convCp_buf);
+     if(convCp_wbuf) free(convCp_wbuf);
+     if(convCp_buf) free(convCp_buf);
+     return(outData);
+}
+
 
 DWORD get_name_field(LPCSTR szName, LPCSTR szField, char *szOut)
 {
@@ -178,13 +212,37 @@ LPSTR file_time_to_str(FILETIME ftTime)
      return szOut;
 }
 
+LPSTR decode_utf8_string(BYTE *pbData, DWORD cbData)
+{
+     LPSTR szOut = NULL;
+     DWORD szIn = 0;
+     BYTE *pbTmp = pbData;
+
+     if(*pbTmp++ != 0x0c)
+          return NULL;
+
+     // TODO: if ASN1 size was located in 2 bytes
+     szIn = *pbTmp++;
+     if(szIn > 0x80)
+          szIn = *pbTmp++;
+
+     szOut = utf8_to_cp1251(pbTmp, szIn);
+
+     return szOut;
+}
+
 void *decode_object(BYTE *pbData, DWORD cbData, LPCSTR szType, DWORD *dwOutSize)
 {
      void *pOut = NULL;
-     *dwOutSize = 0;
+     DWORD dwSize = 0;
      
-     if(!pbData || !cbData)
+     if(!pbData)
           return 0;
+
+     if(szType == ASN_1_UTF8_STRING)
+     {
+          return pOut = decode_utf8_string(pbData, cbData);
+     }
 
      if(!CryptDecodeObject(
                     X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
@@ -193,18 +251,12 @@ void *decode_object(BYTE *pbData, DWORD cbData, LPCSTR szType, DWORD *dwOutSize)
                     cbData,
                     0,
                     NULL,
-                    dwOutSize))
-     {
-          *dwOutSize = 0;
+                    &dwSize))
           return NULL;
-     }
 
-     pOut = malloc(*dwOutSize);
+     pOut = malloc(dwSize);
      if(!pOut)
-     {
-          *dwOutSize = 0;
           return NULL;     
-     }
 
      if(!CryptDecodeObject(
                     X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
@@ -213,12 +265,13 @@ void *decode_object(BYTE *pbData, DWORD cbData, LPCSTR szType, DWORD *dwOutSize)
                     cbData,
                     0,
                     pOut,
-                    dwOutSize))
+                    &dwSize))
      {
-          *dwOutSize = 0;
           free(pOut);
           return NULL;
      }
+     if(dwOutSize)
+          *dwOutSize = dwSize;
 
      return pOut;
 }

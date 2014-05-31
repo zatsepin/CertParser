@@ -65,15 +65,20 @@ int main()
 #endif
 #if 1
      cbCert = load_file(
-                    TEXT("testoff.cer"),
+                    //TEXT("testoff.cer"),
+                    TEXT("ca.cer"),
                     NULL);
+
+     if(!cbCert)
+          goto end;
 
      pbCert = (BYTE *) malloc(cbCert * sizeof(BYTE));
      if(!pbCert)
           goto end;
      
      cbCert = load_file(
-                    TEXT("testoff.cer"),
+                    //TEXT("testoff.cer"),
+                    TEXT("ca.cer"),
                     pbCert);
      if(!cbCert)
           goto end;

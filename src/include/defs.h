@@ -1,8 +1,6 @@
 #ifndef __DEFS_H
 #define __DEFS_H
 
-#include "types.h"
-
 // OIDs
 #define COMMON_NAME_OID                 "2.5.4.3"                // 1
 #define SURNAME_OID                     "2.5.4.4"                // 2
@@ -19,26 +17,16 @@
 #define INN_OID                         "1.2.643.3.131.1.1"      // 13
 #define EMAIL_OID                       "1.2.840.113549.1.9.1"   // 14
 
-#define NAME_ID_NUMS                         14
+#define NAME_ID_NUMS                    14
 
 #define AUTHORITY_KEY_ID_OID            "2.5.29.35"
+#define SUBJECT_SIGN_TOOL_OID           "1.2.643.100.111"
+#define AUTHORITY_SIGN_TOOL_OID         "1.2.643.100.112"
+#define KEY_USAGE_OID                   "2.5.29.15"
+#define CERT_POLICIES_OID               "2.5.29.32"
 
-const QUALIFY_CERT_NAME_ATTR name_attrs[NAME_ID_NUMS] = 
-     {
-          { COMMON_NAME_OID,                 "commonName",                 0 },
-          { SURNAME_OID,                     "surname",                    1 },
-          { GIVEN_NAME_OID,                  "givenName",                  0 },
-          { COUNTRY_NAME_OID,                "countryName",                0 },
-          { STATE_OF_PROVINCE_NAME_OID,      "stateOfProvinceName",        0 },
-          { LOCALITY_NAME_OID,               "localityname",               0 },
-          { STREET_ADDRESS_OID,              "streetAddress",              0 },
-          { ORGANIZATION_NAME_OID,           "organizationName",           0 },
-          { ORGANIZATION_UNIT_NAME_OID,      "organizationUnitName",       0 },
-          { TITLE_OID,                       "title",                      1 },
-          { OGRN_OID,                        "ORGN",                       0 },
-          { SNILS_OID,                       "SNILS",                      1 },
-          { INN_OID,                         "INN",                        0 },
-          { EMAIL_OID,                       "emailAddress",               0 },
-     };
+#define ASN_1_UTF8_STRING               ((LPCSTR) 101)
+
+#define GOST3410_SIGNATURE_SIZE         64
 
 #endif // __DEFS_H
