@@ -14,4 +14,8 @@ LPSTR cert_name_to_str(PCERT_NAME_BLOB pName, DWORD *pdwOutSize);
 
 LPSTR file_time_to_str(FILETIME ftTime);
 
+void *decode_object(BYTE *pbData, DWORD cbData, LPCSTR szType, DWORD *dwOutSize);
+
+LPSTR binary2hex(BYTE *pbData, DWORD cbData);
+
 #endif // __UTIL_H

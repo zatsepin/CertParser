@@ -19,9 +19,11 @@
 #define INN_OID                         "1.2.643.3.131.1.1"      // 13
 #define EMAIL_OID                       "1.2.840.113549.1.9.1"   // 14
 
-#define ID_NUMS                         14
+#define NAME_ID_NUMS                         14
 
-const QUALIFY_CERT_NAME_ATTR name_attrs[ID_NUMS] = 
+#define AUTHORITY_KEY_ID_OID            "2.5.29.35"
+
+const QUALIFY_CERT_NAME_ATTR name_attrs[NAME_ID_NUMS] = 
      {
           { COMMON_NAME_OID,                 "commonName",                 0 },
           { SURNAME_OID,                     "surname",                    1 },

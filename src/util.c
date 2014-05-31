@@ -177,3 +177,83 @@ LPSTR file_time_to_str(FILETIME ftTime)
 
      return szOut;
 }
+
+void *decode_object(BYTE *pbData, DWORD cbData, LPCSTR szType, DWORD *dwOutSize)
+{
+     void *pOut = NULL;
+     *dwOutSize = 0;
+     
+     if(!pbData || !cbData)
+          return 0;
+
+     if(!CryptDecodeObject(
+                    X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                    szType,
+                    pbData,
+                    cbData,
+                    0,
+                    NULL,
+                    dwOutSize))
+     {
+          *dwOutSize = 0;
+          return NULL;
+     }
+
+     pOut = malloc(*dwOutSize);
+     if(!pOut)
+     {
+          *dwOutSize = 0;
+          return NULL;     
+     }
+
+     if(!CryptDecodeObject(
+                    X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                    szType,
+                    pbData,
+                    cbData,
+                    0,
+                    pOut,
+                    dwOutSize))
+     {
+          *dwOutSize = 0;
+          free(pOut);
+          return NULL;
+     }
+
+     return pOut;
+}
+
+LPSTR binary2hex(BYTE *pbData, DWORD cbData)
+{
+     LPSTR szOut = NULL;
+     DWORD dwOutSize = 0;
+
+     if(!pbData || !cbData)
+          return NULL;
+
+     if(!CryptBinaryToString(
+                    pbData,
+                    cbData,
+                    CRYPT_STRING_HEX,
+                    NULL,
+                    &dwOutSize))
+          return NULL;
+
+     szOut = (LPSTR) calloc(dwOutSize + 1, 1);
+     if(!szOut)
+          return NULL;
+
+     if(!CryptBinaryToString(
+                    pbData,
+                    cbData,
+                    CRYPT_STRING_HEX,
+                    szOut,
+                    &dwOutSize))
+     {
+          free(szOut);
+          return NULL;
+     }
+
+     return szOut;
+}
+

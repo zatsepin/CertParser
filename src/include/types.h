@@ -32,6 +32,9 @@ typedef struct __QUALIFY_CERT_INFO
      PQUALIFY_CERT_NAME  pIssuerName;
      LPSTR               szNotBefore;
      LPSTR               szNotAfter;
+
+     LPSTR               szAuthorityCertSerialNumber;
+
 } QUALIFY_CERT_INFO, *PQUALIFY_CERT_INFO;
 
 #endif // __TYPES_H

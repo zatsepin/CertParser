@@ -4,13 +4,34 @@
 #include "defs.h"
 #include "util.h"
 
+static LPSTR get_authority_serial_number(BYTE *pbData, DWORD cbData)
+{
+     PCERT_AUTHORITY_KEY_ID_INFO pCertAuthKeyId;
+     DWORD dwSize = 0;
+     LPSTR szOut = NULL;
+     if(!pbData || !cbData)
+          return NULL;
+
+     pCertAuthKeyId = (PCERT_AUTHORITY_KEY_ID_INFO)decode_object(
+                                                       pbData,
+                                                       cbData,
+                                                       X509_AUTHORITY_KEY_ID,
+                                                       &dwSize);
+     if(!pCertAuthKeyId || !dwSize)
+          return NULL;
+
+     szOut = binary2hex(pCertAuthKeyId->CertSerialNumber.pbData, pCertAuthKeyId->CertSerialNumber.cbData);
+
+     return szOut;
+}
+
 /////////////////////////////////////////////////////////////////////////
 // QUALIFY_CERT_INFO
 /////////////////////////////////////////////////////////////////////////
 PQUALIFY_CERT_INFO QUALIFY_CERT_INFO_new(PCCERT_CONTEXT pCertificate)
 {
      PQUALIFY_CERT_INFO pCertInfo = NULL;
-     int rv = 0;
+     unsigned int idx = 0, rv = 0;
 
      if(!pCertificate || !pCertificate->pCertInfo)
           goto end;
@@ -19,16 +40,22 @@ PQUALIFY_CERT_INFO QUALIFY_CERT_INFO_new(PCCERT_CONTEXT pCertificate)
      if(!pCertInfo)
           goto end;
 
-     if(NULL == (pCertInfo->pIssuerName = QUALIFY_CERT_NAME_new(&pCertificate->pCertInfo->Issuer)))
-          goto end;
-     
-     if(NULL == (pCertInfo->pSubjectName = QUALIFY_CERT_NAME_new(&pCertificate->pCertInfo->Subject)))
-          goto end;
+     pCertInfo->pIssuerName = QUALIFY_CERT_NAME_new(&pCertificate->pCertInfo->Issuer);
+     pCertInfo->pSubjectName = QUALIFY_CERT_NAME_new(&pCertificate->pCertInfo->Subject);
 
-     if(NULL == (pCertInfo->szNotBefore = file_time_to_str(pCertificate->pCertInfo->NotBefore)))
-          goto end;
-     if(NULL == (pCertInfo->szNotAfter = file_time_to_str(pCertificate->pCertInfo->NotAfter)))
-          goto end;
+     pCertInfo->szNotBefore = file_time_to_str(pCertificate->pCertInfo->NotBefore);
+     pCertInfo->szNotAfter = file_time_to_str(pCertificate->pCertInfo->NotAfter);
+
+     for(; idx < pCertificate->pCertInfo->cExtension; ++idx)
+     {
+          PCERT_EXTENSION pExt = &pCertificate->pCertInfo->rgExtension[idx];
+          if(!pExt)
+               break;
+          if(!strcmp(pExt->pszObjId, AUTHORITY_KEY_ID_OID))
+          {
+               pCertInfo->szAuthorityCertSerialNumber = get_authority_serial_number(pExt->Value.pbData, pExt->Value.cbData);
+          }
+     }
 
      rv = 1;
 end:
@@ -47,6 +74,11 @@ void QUALIFY_CERT_INFO_free(PQUALIFY_CERT_INFO pCertInfo)
      {
           QUALIFY_CERT_NAME_free(pCertInfo->pSubjectName); pCertInfo->pSubjectName = NULL;
           QUALIFY_CERT_NAME_free(pCertInfo->pIssuerName); pCertInfo->pIssuerName = NULL;
+          if(pCertInfo->szAuthorityCertSerialNumber) 
+          {
+               free(pCertInfo->szAuthorityCertSerialNumber);
+               pCertInfo->szAuthorityCertSerialNumber = NULL;
+          }
           pCertInfo->type = Undef;
      }
 }
@@ -79,6 +111,8 @@ int QUALIFY_CERT_INFO_print(PQUALIFY_CERT_INFO pCertInfo)
      printf("\tNot before: %s\n", pCertInfo->szNotBefore);
      printf("\tNot after: %s\n", pCertInfo->szNotAfter);
 
+     printf("Authority certificate serial number: %s\n", pCertInfo->szAuthorityCertSerialNumber);
+
      return 1;
 }
 
@@ -108,7 +142,7 @@ PQUALIFY_CERT_NAME QUALIFY_CERT_NAME_new(PCERT_NAME_BLOB pName)
      if(!szName || !dwName)
           goto end;
 
-     for(; idx < ID_NUMS; ++idx)
+     for(; idx < NAME_ID_NUMS; ++idx)
      {
           memset(szNameField, 0, sizeof(szNameField));               
           dwNameFieldSize = get_name_field(
